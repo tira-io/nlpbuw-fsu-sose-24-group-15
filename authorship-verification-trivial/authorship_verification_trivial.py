@@ -31,14 +31,14 @@ if __name__ == "__main__":
     vectorizer = TfidfVectorizer()
     X_train = vectorizer.fit_transform(text_train["text"])
     X_validation = vectorizer.transform(text_validation["text"])
-
+    
     # Model Training
     model = LogisticRegression()
-    model.fit(X_train, targets_train["generated"])
+    model.fit(X_train, targets_train['generated'])
 
     # Model Evaluation
     predictions = model.predict(X_validation)
-    accuracy = accuracy_score(targets_validation["generated"], predictions)
+    accuracy = accuracy_score(targets_validation['generated'], predictions)
     print("Validation Accuracy:", accuracy)
 
     # Classifying the Data
