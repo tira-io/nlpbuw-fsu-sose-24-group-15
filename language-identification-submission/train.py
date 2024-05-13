@@ -58,17 +58,17 @@ stopwords = {
 }
 
 # text preprocess
-# Helper function for text preprocessing
+# Helper function for text preprocessing 
 def preprocess_text(text):
     # Regex to replace anything that is not alphabet or whitespace with empty string
     text = re.sub(r'[^a-zA-Z\s]', '', text)
     # Converting the text to all lowercase to remove case mismatches
     text = text.lower()
-    # Tokenizing the text by breaking it up into smaller components (tokens)
+    # Tokenizing the text by breaking it up into smaller components 
     text = word_tokenize(text)    
-    # Stemming the text to remove word affixes (prefixes and suffixes)
+    # Using stemming to remove the word prefix and suffixes
     text = [stemmer.stem(token) for token in text]
-    # Lemmatization to bring words down to their root forms
+    # Using lemmatation to bring their words to normla form
     text = [lemmatizer.lemmatize(token) for token in text]
     # Stopword removal to remove words that don’t provide any additional information
     text = [word for word in text if word not in stopwords] 
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     y = le.fit_transform(df["lang"])
     
     final_data = pd.DataFrame(np.c_[df["text"], y], columns=["text", "lang"])
-    print("Final data:\n", final_data.head())
+    
 
 
     # Train the model
