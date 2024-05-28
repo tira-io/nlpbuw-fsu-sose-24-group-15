@@ -4,7 +4,7 @@ ADD run.py /code/run.py
 
 ADD ADD model.joblib /code/model.joblib
 
-ADD Jaccardimilarity.py /code/Jaccardsimilarity.py
+ADD Jaccard_similarity.py /code/Jaccard_similarity.py
 
 RUN pip install spacy \
     && python3 -m spacy download en_core_web_md
