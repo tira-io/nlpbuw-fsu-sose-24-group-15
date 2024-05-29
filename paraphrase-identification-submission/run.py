@@ -14,9 +14,11 @@ if __name__ == "__main__":
     text_val = tira.pd.inputs(
         "nlpbuw-fsu-sose-24", "paraphrase-identification-validation-20240515-training"
     ).set_index("id")
-
-    model = load(Path(__file__).parent / "model.joblib")
     similarities = text_val.apply(lambda x:calculate_jaccard_similarity(x['sentence1'],x['sentence2']),axis=1)
+    
+    #loading the model 
+    model = load(Path(__file__).parent / "model.joblib")
+    
     
     # add similarity property to data
     text_val['similarity'] = similarities
