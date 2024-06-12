@@ -7,66 +7,86 @@ import numpy as np
 from nltk.corpus import stopwords
 import string
 import nltk
-import networkx as nx
 import pandas as pd
 
 
-nltk.download('punkt')
-nltk.download('stopwords')
-
-
-
-# Function to preprocess the text by removing stop words and punctuation
-def preprocess_text(text):
+def preprocess_text(sentences):
+    # Convert sentences to lowercase, remove punctuation, remove stopwords, and tokenize
     stop_words = set(stopwords.words('english'))
-    # Convert to lowercase and remove punctuation
-    text = text.lower().translate(str.maketrans('', '', string.punctuation))
-    # Tokenize and remove stopwords
-    words = nltk.word_tokenize(text)
-    return ' '.join([word for word in words if word not in stop_words])
+    processed_sentences = []
+    
+    for sentence in sentences:
+        # Convert to lowercase
+        sentence = sentence.lower()
+        
+        # Remove punctuation
+        sentence = sentence.translate(str.maketrans('', '', string.punctuation))
+        
+        # Remove stopwords
+        words = sentence.split()
+        filtered_text = [word for word in words if word not in stop_words]
+        
+        # Tokenize
+        tokens = nltk.word_tokenize(' '.join(filtered_text))
+        
+        if tokens:  # Only add non-empty sentences
+            processed_sentences.append(' '.join(tokens))
+    
+    return processed_sentences
 
-# Function to vectorize sentences using TF-IDF
+
+
 def vectorize_sentences(sentences):
+    if not sentences:
+        return None
+    
     vectorizer = TfidfVectorizer()
-    return vectorizer.fit_transform(sentences)
+    tfidf_matrix = vectorizer.fit_transform(sentences)
+    return tfidf_matrix
 
-# Function to summarize text using the TextRank algorithm
-def textrank_summarize(text, num_sentences=3):
+
+def rank_sentences(tfidf_matrix):
+    if tfidf_matrix is None:
+        return []
+    
+    # Compute pairwise cosine similarity between sentences
+    similarity_matrix = cosine_similarity(tfidf_matrix)
+    # Rank sentences based on similarity scores
+    ranked_sentences = np.argsort(np.sum(similarity_matrix, axis=1))[::-1]
+    return ranked_sentences
+
+
+def summarize(text):
     # Split the text into sentences
     sentences = nltk.sent_tokenize(text)
-    if not sentences:
-        return ""
 
     # Preprocess each sentence
-    preprocessed_sentences = [preprocess_text(sentence) for sentence in sentences]
+    pp_sentences = preprocess_text(sentences=sentences)
+    
+    # Vectorize each sentence
+    tfidf_matrix = vectorize_sentences(sentences)
+    
+    # Calculate similarity matrix for each sentence
+    ranked_sentences = rank_sentences(tfidf_matrix)
+    
+    top_n_sentences = [sentences[i] for i in ranked_sentences[:3]]
+    summary = ' '.join(top_n_sentences)
+    
+    return summary
 
-    # Vectorize the preprocessed sentences
-    tfidf_matrix = vectorize_sentences(preprocessed_sentences)
-
-    # Compute the cosine similarity matrix
-    similarity_matrix = cosine_similarity(tfidf_matrix)
-
-    # Build a graph using the similarity matrix
-    nx_graph = nx.from_numpy_array(similarity_matrix)
-
-    # Apply PageRank algorithm to the graph
-    scores = nx.pagerank(nx_graph)
-
-    # Rank the sentences based on their PageRank scores
-    ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)), reverse=True)
-
-    # Select the top 'num_sentences' sentences for the summary
-    return ' '.join([sentence for score, sentence in ranked_sentences[:num_sentences]])
 
 if __name__ == "__main__":
+
     # Load the data
     tira = Client()
     df = tira.pd.inputs(
         "nlpbuw-fsu-sose-24", "summarization-validation-20240530-training"
     ).set_index("id")
 
-    
-    df['summary'] = df['story'].apply(lambda x: textrank_summarize(x, num_sentences=3))
+
+    # Extractive summarization
+
+    df['summary'] = df['story'].apply(summarize)
     
     df = df.drop(columns=["story"]).reset_index()
 
@@ -75,4 +95,3 @@ if __name__ == "__main__":
     df.to_json(
         Path(output_directory) / "predictions.jsonl", orient="records", lines=True
     )
-    
