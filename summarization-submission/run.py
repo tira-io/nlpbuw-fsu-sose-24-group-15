@@ -10,61 +10,53 @@ import nltk
 import networkx as nx
 import pandas as pd
 
+
 nltk.download('punkt')
 nltk.download('stopwords')
 
 
-#Pre processing the text
+
+# Function to preprocess the text by removing stop words and punctuation
 def preprocess_text(text):
     stop_words = set(stopwords.words('english'))
-    
     # Convert to lowercase and remove punctuation
-    text = text.lower()
-    text = text.translate(str.maketrans('', '', string.punctuation))
-    
+    text = text.lower().translate(str.maketrans('', '', string.punctuation))
     # Tokenize and remove stopwords
     words = nltk.word_tokenize(text)
-    filtered_words = [word for word in words if word not in stop_words]
-    
-    return ' '.join(filtered_words)
+    return ' '.join([word for word in words if word not in stop_words])
 
+# Function to vectorize sentences using TF-IDF
 def vectorize_sentences(sentences):
     vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform(sentences)
-    return tfidf_matrix
+    return vectorizer.fit_transform(sentences)
 
+# Function to summarize text using the TextRank algorithm
 def textrank_summarize(text, num_sentences=3):
     # Split the text into sentences
     sentences = nltk.sent_tokenize(text)
-    
-    if len(sentences) == 0:
+    if not sentences:
         return ""
-    
-    # Preprocess sentences
+
+    # Preprocess each sentence
     preprocessed_sentences = [preprocess_text(sentence) for sentence in sentences]
-    
-    # Vectorize the sentences
+
+    # Vectorize the preprocessed sentences
     tfidf_matrix = vectorize_sentences(preprocessed_sentences)
-    
+
     # Compute the cosine similarity matrix
     similarity_matrix = cosine_similarity(tfidf_matrix)
-    
-    # Build the similarity graph
+
+    # Build a graph using the similarity matrix
     nx_graph = nx.from_numpy_array(similarity_matrix)
-    
-    # Apply the PageRank algorithm
+
+    # Apply PageRank algorithm to the graph
     scores = nx.pagerank(nx_graph)
-    
-    # Rank sentences based on scores
+
+    # Rank the sentences based on their PageRank scores
     ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)), reverse=True)
-    
-    # Select the top num_sentences sentences
-    summary_sentences = [sentence for score, sentence in ranked_sentences[:num_sentences]]
-    
-    # Combine selected sentences into the summary
-    summary = ' '.join(summary_sentences)
-    
-    return summary
+
+    # Select the top 'num_sentences' sentences for the summary
+    return ' '.join([sentence for score, sentence in ranked_sentences[:num_sentences]])
 
 if __name__ == "__main__":
     # Load the data
@@ -83,3 +75,4 @@ if __name__ == "__main__":
     df.to_json(
         Path(output_directory) / "predictions.jsonl", orient="records", lines=True
     )
+    
