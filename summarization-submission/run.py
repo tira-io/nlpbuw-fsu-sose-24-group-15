@@ -13,8 +13,6 @@ import pandas as pd
 nltk.download('punkt')
 nltk.download('stopwords')
 
-nltk.download('punkt')
-nltk.download('stopwords')
 
 #Pre processing the text
 def preprocess_text(text):
